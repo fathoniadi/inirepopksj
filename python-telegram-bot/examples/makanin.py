@@ -19,6 +19,7 @@ bot.
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
+import os
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -41,7 +42,7 @@ def tambahAdmin(bot, update):
         update.message.reply_text('Anda tidak berhak')
     else:
         username = update.message.text.split(' ')[1]
-        if (username !== 'syukronrm'):
+        if (username != 'syukronrm'):
             listAdmin.append(username)
             update.message.reply_text(username + ' telah ditambah sebagai admin')
 
@@ -97,6 +98,7 @@ def beriMakan(bot, update):
     if (checkIfAdmin(update.message.from_user.username) == false):
         update.message.reply_text('Anda tidak berhak')
     else:
+	os.system('python servobuka.py')
         update.message.reply_text('Telah diberi makan')
 
 def buka(bot, update):
