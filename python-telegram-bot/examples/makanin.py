@@ -97,7 +97,7 @@ def beriMakan(bot, update):
     if (checkIfAdmin(update.message.from_user.username) == false):
         update.message.reply_text('Anda tidak berhak')
     else:
-        update.message.reply_text('Sudah diberi maka')
+        update.message.reply_text('Telah diberi makan')
 
 def buka(bot, update):
     if (checkIfAdmin(update.message.from_user.username) == false):
