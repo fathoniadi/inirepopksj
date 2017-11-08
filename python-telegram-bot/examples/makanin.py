@@ -20,6 +20,7 @@ bot.
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import os
+import base64
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,76 +30,106 @@ logger = logging.getLogger(__name__)
 
 true = True
 false = False
-listAdmin = ['syukronrm']
+
+def getListAdmin():
+    data = ''
+    with open('./.admin', 'rb') as file:
+        data = file.read()
+
+    admins  = base64.b64decode(data)
+
+    return admins.split(',')
+
+def reWriteDaftarAdmin(admins):
+    with open('./.admin', 'wb') as file:
+        file.write(base64.b64encode(','.join(admins)))
 
 def checkIfAdmin(username):
+    
+    listAdmin = getListAdmin()
+
     if username in listAdmin:
         return true
     else:
         return false
 
-def tambahAdmin(bot, update):
-    if (checkIfAdmin(update.message.from_user.username) == false):
-        update.message.reply_text('Anda tidak berhak')
-    else:
-        username = update.message.text.split(' ')[1]
-        if (username != 'syukronrm'):
-            listAdmin.append(username)
-            update.message.reply_text(username + ' telah ditambah sebagai admin')
+def tambahAdmin(bot, update, args):
 
-def hapusAdmin(bot, update):
+    listAdmin = getListAdmin()
+
     if (checkIfAdmin(update.message.from_user.username) == false):
         update.message.reply_text('Anda tidak berhak')
     else:
-        username = update.message.text.split(' ')[1]
+
+        if len(args) <= 0 or len(args) > 1:
+            update.message.reply_text('Bad Request!, parameter tidak sesuai')
+            return
+
+        username = args[0]
+        if (username not in listAdmin):
+            listAdmin.append(username)
+            reWriteDaftarAdmin(listAdmin)
+            update.message.reply_text(username + ' telah ditambah sebagai admin')
+        else:
+            update.message.reply_text('Gagal menambahkan '+ username + ' sebagai admin, ' + username + ' sudah menjadi admin')
+
+def hapusAdmin(bot, update, args):
+
+    listAdmin = getListAdmin()
+
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        
+        if len(args) <= 0 or len(args) > 1:
+            update.message.reply_text('Bad Request!, parameter tidak sesuai')
+            return
+
+        username = args[0]
+
         listAdmin.remove(username)
+        reWriteDaftarAdmin(listAdmin)
+
         update.message.reply_text(username + ' telah dihapus dari admin')
 
 def daftarAdmin(bot, update):
+    listAdmin = getListAdmin()
     if (checkIfAdmin(update.message.from_user.username) == false):
         update.message.reply_text('Anda tidak berhak')
     else:
         message = 'Daftar admin adalah : '
-        for username in listAdmin:
-            message = message + username + ', '
-        update.message.reply_text(message)
+        update.message.reply_text(message + ", ".join(listAdmin))
 
-def readConfig():
-    data = ''
-    with open('./.env', 'rb') as file:
-        data = file.read()
-
-    configs = {}
-    config_all = data.split('\n')
-    for config in config_all:
-        configs[config.split('=')[0]] = config.split('=')[1]
-
-    return configs
-
-def set_timer(bot, update, args, job_queue, chat_data):
-    """Add a job to the queue."""
-    chat_id = update.message.chat_id
-    try:
-        # args[0] should contain the time for the timer in seconds
-        due = int(args[0])
-        if due < 0:
-            update.message.reply_text('Sorry we can not go back to future!')
+def set_timer(bot, update, args):
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        if len(args) <= 0 or len(args) > 1:
+            update.message.reply_text('Bad Request!, parameter tidak sesuai')
             return
+        try:
+            time = int(args[0])
+        except Exception as e:
+            update.message.reply_text('Bad Request!, parameter tidak sesuai')
+            return            
 
-        # Add job to queue
-        job = job_queue.run_once(alarm, due, context=chat_id)
-        chat_data['job'] = job
+        with open('./.env', 'wb') as file:
+            file.write('timer='+str(time))
 
-        update.message.reply_text('Timer successfully set!')
+        update.message.reply_text('Waktu buka tutup pintu berhasil diatur menjadi '+str(time)+'s')
 
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <seconds>')
 
 def beriMakan(bot, update):
     if (checkIfAdmin(update.message.from_user.username) == false):
         update.message.reply_text('Anda tidak berhak')
     else:
-	os.system('python servobuka.py')
+        
+        try:
+            os.system('python servobuka.py')
+        except Exception as e:
+            update.message.reply_text('Kesalahan pada sistem, tidak bisa memberi makan peliharaan')
+            return
+
         update.message.reply_text('Telah diberi makan')
 
 def buka(bot, update):
@@ -121,9 +152,10 @@ def help(bot, update):
     message = "Hai Selamat datang di Makanin Bot.\n\
     Berikut beberapa commands yang bisa dicoba.\n\
     /berimakan - Untuk memberi makan ikan secara otomatis\n\
-    /tambahadmin - Tambah admin\n\
-    /hapusadmin - Hapus admin\n\
+    /tambahadmin [username] - Tambah admin\n\
+    /hapusadmin [username]- Hapus admin\n\
     /daftaradmin - Melihat semua admin\n\
+    /settimer [waktu dalam detik] - Untuk mengatur selisih buka tutup alat selama x detik\n\
     /help - Untuk bantuan\n\
     "
     update.message.reply_text(message)
@@ -148,10 +180,12 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("berimakan", beriMakan))
-    dp.add_handler(CommandHandler("tambahadmin", tambahAdmin))
-    dp.add_handler(CommandHandler("hapusadmin", hapusAdmin))
+    dp.add_handler(CommandHandler("tambahadmin", tambahAdmin, pass_args=True))
+    dp.add_handler(CommandHandler("hapusadmin", hapusAdmin, pass_args=True))
     dp.add_handler(CommandHandler("daftaradmin", daftarAdmin))
     dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("settimer", set_timer,
+                                  pass_args=True))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
