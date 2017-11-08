@@ -26,6 +26,41 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
+true = True
+false = False
+listAdmin = ['syukronrm']
+
+def checkIfAdmin(username):
+    if username in listAdmin:
+        return true
+    else:
+        return false
+
+def tambahAdmin(bot, update):
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        username = update.message.text.split(' ')[1]
+        if (username !== 'syukronrm'):
+            listAdmin.append(username)
+            update.message.reply_text(username + ' telah ditambah sebagai admin')
+
+def hapusAdmin(bot, update):
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        username = update.message.text.split(' ')[1]
+        listAdmin.remove(username)
+        update.message.reply_text(username + ' telah dihapus dari admin')
+
+def daftarAdmin(bot, update):
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        message = 'Daftar admin adalah : '
+        for username in listAdmin:
+            message = message + username + ', '
+        update.message.reply_text(message)
 
 def readConfig():
     data = ''
@@ -38,8 +73,6 @@ def readConfig():
         configs[config.split('=')[0]] = config.split('=')[1]
 
     return configs
-
-
 
 def set_timer(bot, update, args, job_queue, chat_data):
     """Add a job to the queue."""
@@ -60,68 +93,42 @@ def set_timer(bot, update, args, job_queue, chat_data):
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds>')
 
-
-
-# Define a few command handlers. These usually take the two arguments bot and
-# update. Error handlers also receive the raised TelegramError object in error.
 def beriMakan(bot, update):
-    config = readConfig()
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Beri Makan')
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        update.message.reply_text('Sudah diberi maka')
 
-
-# Define a few command handlers. These usually take the two arguments bot and
-# update. Error handlers also receive the raised TelegramError object in error.
 def buka(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Buka')
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        update.message.reply_text('Buka')
 
-
-# Define a few command handlers. These usually take the two arguments bot and
-# update. Error handlers also receive the raised TelegramError object in error.
 def tutup(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Tutup')
+    if (checkIfAdmin(update.message.from_user.username) == false):
+        update.message.reply_text('Anda tidak berhak')
+    else:
+        update.message.reply_text('Tutup')
 
-
-def setTimer(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Set Timer')
-
-
-def addAdmin(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('addAdmin')
-
-
-def listAdmin(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('List Admin')
-
-
-def deleteAdmin(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Delete Admin')
-
+#def setTimer(bot, update):
+#    """Send a message when the command /start is issued."""
+#    update.message.reply_text('Set Timer')
 
 def help(bot, update):
-    message = "Hai Selamat datang di Makanin Bot.\nBerikut beberapa commands yang bisa dicoba.\n\
+    message = "Hai Selamat datang di Makanin Bot.\n\
+    Berikut beberapa commands yang bisa dicoba.\n\
     /berimakan - Untuk memberi makan ikan secara otomatis\n\
-    /buka - Untuk membuka tutup pakan\n\
-    /tutup - Untuk memberi makan ikan secara otomatis\n\
-    /settimer - Untuk konfigurasi timer buka dan tutup pakan untuk command /berimakan\n\
-    /listadmin - Untuk menampilkan list admin\n\
-    /addadmin - Untuk menambahkan admin\n\
-    /deleteadmin - Untuk menghapus admin\n\
+    /tambahadmin - Tambah admin\n\
+    /hapusadmin - Hapus admin\n\
+    /daftaradmin - Melihat semua admin\n\
     /help - Untuk bantuan\n\
     "
-    """Send a message when the command /help is issued."""
     update.message.reply_text(message)
 
 
 def echo(bot, update):
     """Echo the user message."""
-    print update.message.text
     update.message.reply_text(update.message.text)
 
 
@@ -129,28 +136,20 @@ def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
 
-
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    updater = Updater("358705908:AAHw1KCmfabvF0O8K4kDq5mmwN2DiAg-5xo")
+    updater = Updater("470261273:AAFY_jsb32bKyCAQH0QbQfVfd1jV-ySsz0E")
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("berimakan", beriMakan))
-    dp.add_handler(CommandHandler("buka", buka))
-    dp.add_handler(CommandHandler("tutup", tutup))
-    dp.add_handler(CommandHandler("settimer", setTimer))
-    dp.add_handler(CommandHandler("listadmin", listAdmin))
-    dp.add_handler(CommandHandler("addadmin", addAdmin))
-    dp.add_handler(CommandHandler("deleteadmin", deleteAdmin))
+    dp.add_handler(CommandHandler("tambahadmin", tambahAdmin))
+    dp.add_handler(CommandHandler("hapusadmin", hapusAdmin))
+    dp.add_handler(CommandHandler("daftaradmin", daftarAdmin))
     dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("addjob", set_timer,
-                                  pass_args=True,
-                                  pass_job_queue=True,
-                                  pass_chat_data=True))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
